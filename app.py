@@ -116,7 +116,10 @@ def create_elevenlabs_agent(name, system_prompt, first_message, language):
                     "prompt": {"prompt": system_prompt},
                     "first_message": first_message,
                     "language": language,
-                }
+                },
+                # flash v2.5 is multilingual — required for non-English agents,
+                # and fast + inexpensive for English ones too
+                "tts": {"model_id": "eleven_flash_v2_5"},
             },
         },
         timeout=90,
@@ -158,50 +161,119 @@ STYLE = """
 # ---------------- intake form ----------------
 FORM_HTML = STYLE + """
 <div class="card">
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:6px">
+    <button type="button" onclick="setLang('en')" id="btn-en" style="width:auto;margin:0;padding:7px 16px;font-size:.8rem;background:var(--teal)">EN</button>
+    <button type="button" onclick="setLang('es')" id="btn-es" style="width:auto;margin:0;padding:7px 16px;font-size:.8rem;background:#9db3ab">ES</button>
+  </div>
   {{ logo|safe }}
   <h1 style="text-align:center">ARCHANGEL FORGE</h1>
-  <p class="sub" style="text-align:center">Umbrella Dynamics · New agent intake. Fill this once — a working AI receptionist comes out the other side.</p>
-  {% if error %}<div class="err"><b>Something went wrong:</b><br>{{ error }}</div>{% endif %}
+  <p class="sub" style="text-align:center" data-t="sub">Umbrella Dynamics · New agent intake. Fill this once — a working AI receptionist comes out the other side.</p>
+  {% if error %}<div class="err"><b data-t="errhead">Something went wrong:</b><br>{{ error }}</div>{% endif %}
   <form method="POST" action="/create">
-    <label>Intake password</label>
+    <label data-t="l_pw">Intake password</label>
     <input type="password" name="password" required>
 
-    <label>Business name</label>
+    <label data-t="l_name">Business name</label>
     <input name="business_name" required placeholder="Keller Plumbing">
 
-    <label>What the business does <small>(one or two sentences)</small></label>
-    <textarea name="description" required placeholder="Residential plumbing repair and installation in the Denver area."></textarea>
+    <label data-t="l_desc">What the business does <small data-t="s_desc">(one or two sentences)</small></label>
+    <textarea name="description" required data-p="p_desc" placeholder="Residential plumbing repair and installation in the Denver area."></textarea>
 
-    <label>Business hours</label>
-    <input name="hours" required placeholder="Mon–Fri 8am–6pm, Sat 9am–1pm">
+    <label data-t="l_hours">Business hours</label>
+    <input name="hours" required data-p="p_hours" placeholder="Mon–Fri 8am–6pm, Sat 9am–1pm">
 
-    <label>Who genuine calls go to <small>(name the agent should mention)</small></label>
+    <label data-t="l_fwd">Who genuine calls go to <small data-t="s_fwd">(name the agent should mention)</small></label>
     <input name="forward_name" required placeholder="Dana">
 
-    <label>Custom greeting <small>(optional — leave blank and the Forge writes one)</small></label>
-    <input name="greeting" placeholder="Good morning, you've reached Keller Plumbing...">
+    <label data-t="l_greet">Custom greeting <small data-t="s_greet">(optional — leave blank and the Forge writes one)</small></label>
+    <input name="greeting" data-p="p_greet" placeholder="Good morning, you've reached Keller Plumbing...">
 
-    <label>Questions the agent should ask callers <small>(optional)</small></label>
-    <textarea name="questions" placeholder="What's the issue? What's your address? Is this urgent?"></textarea>
+    <label data-t="l_q">Questions the agent should ask callers <small data-t="s_opt1">(optional)</small></label>
+    <textarea name="questions" data-p="p_q" placeholder="What's the issue? What's your address? Is this urgent?"></textarea>
 
-    <label>Things the agent should never say or do <small>(optional)</small></label>
-    <textarea name="never_say" placeholder="Never quote exact prices. Never promise same-day service."></textarea>
+    <label data-t="l_never">Things the agent should never say or do <small data-t="s_opt2">(optional)</small></label>
+    <textarea name="never_say" data-p="p_never" placeholder="Never quote exact prices. Never promise same-day service."></textarea>
 
-    <label>How to handle spam calls <small>(optional)</small></label>
-    <input name="spam_policy" placeholder="Politely end the call and block">
+    <label data-t="l_spam">How to handle spam calls <small data-t="s_opt3">(optional)</small></label>
+    <input name="spam_policy" data-p="p_spam" placeholder="Politely end the call and block">
 
-    <label>Agent language</label>
+    <label data-t="l_lang">Agent language</label>
     <select name="language">
-      <option value="en">English</option>
-      <option value="es">Spanish</option>
+      <option value="en" data-t="o_en">English</option>
+      <option value="es" data-t="o_es">Spanish</option>
     </select>
 
-    <label>Referral code <small>(optional — how did this client find us?)</small></label>
+    <label data-t="l_ref">Referral code <small data-t="s_ref">(optional — how did this client find us?)</small></label>
     <input name="ref_code" placeholder="mike">
 
-    <button type="submit">⚡ Forge this agent</button>
+    <button type="submit" data-t="submit">⚡ Forge this agent</button>
   </form>
 </div>
+<script>
+const T = {
+  en: {
+    sub: "Umbrella Dynamics · New agent intake. Fill this once — a working AI receptionist comes out the other side.",
+    errhead: "Something went wrong:",
+    l_pw: "Intake password",
+    l_name: "Business name",
+    l_desc: "What the business does ", s_desc: "(one or two sentences)",
+    p_desc: "Residential plumbing repair and installation in the Denver area.",
+    l_hours: "Business hours", p_hours: "Mon–Fri 8am–6pm, Sat 9am–1pm",
+    l_fwd: "Who genuine calls go to ", s_fwd: "(name the agent should mention)",
+    l_greet: "Custom greeting ", s_greet: "(optional — leave blank and the Forge writes one)",
+    p_greet: "Good morning, you've reached Keller Plumbing...",
+    l_q: "Questions the agent should ask callers ", s_opt1: "(optional)",
+    p_q: "What's the issue? What's your address? Is this urgent?",
+    l_never: "Things the agent should never say or do ", s_opt2: "(optional)",
+    p_never: "Never quote exact prices. Never promise same-day service.",
+    l_spam: "How to handle spam calls ", s_opt3: "(optional)",
+    p_spam: "Politely end the call and block",
+    l_lang: "Agent language", o_en: "English", o_es: "Spanish",
+    l_ref: "Referral code ", s_ref: "(optional — how did this client find us?)",
+    submit: "⚡ Forge this agent"
+  },
+  es: {
+    sub: "Umbrella Dynamics · Alta de nuevo agente. Complete esto una vez — del otro lado sale una recepcionista de IA funcionando.",
+    errhead: "Algo salió mal:",
+    l_pw: "Contraseña de acceso",
+    l_name: "Nombre del negocio",
+    l_desc: "A qué se dedica el negocio ", s_desc: "(una o dos frases)",
+    p_desc: "Reparación e instalación de plomería residencial en el área de Denver.",
+    l_hours: "Horario del negocio", p_hours: "Lun–Vie 8am–6pm, Sáb 9am–1pm",
+    l_fwd: "A quién se transfieren las llamadas reales ", s_fwd: "(nombre que el agente debe mencionar)",
+    l_greet: "Saludo personalizado ", s_greet: "(opcional — déjelo en blanco y el Forge escribe uno)",
+    p_greet: "Buenos días, ha llamado a Keller Plumbing...",
+    l_q: "Preguntas que el agente debe hacer ", s_opt1: "(opcional)",
+    p_q: "¿Cuál es el problema? ¿Cuál es su dirección? ¿Es urgente?",
+    l_never: "Cosas que el agente nunca debe decir o hacer ", s_opt2: "(opcional)",
+    p_never: "Nunca dar precios exactos. Nunca prometer servicio el mismo día.",
+    l_spam: "Cómo manejar llamadas spam ", s_opt3: "(opcional)",
+    p_spam: "Terminar la llamada con cortesía y bloquear",
+    l_lang: "Idioma del agente", o_en: "Inglés", o_es: "Español",
+    l_ref: "Código de referido ", s_ref: "(opcional — ¿cómo nos encontró este cliente?)",
+    submit: "⚡ Forjar este agente"
+  }
+};
+function setLang(l){
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const v = T[l][el.dataset.t];
+    if (v === undefined) return;
+    // keep <small> children intact on labels: only replace the first text node
+    if (el.tagName === 'LABEL' && el.querySelector('small')) {
+      el.childNodes[0].textContent = v;
+    } else {
+      el.textContent = v;
+    }
+  });
+  document.querySelectorAll('[data-p]').forEach(el => {
+    const v = T[l][el.dataset.p];
+    if (v !== undefined) el.placeholder = v;
+  });
+  document.getElementById('btn-en').style.background = l === 'en' ? 'var(--teal)' : '#9db3ab';
+  document.getElementById('btn-es').style.background = l === 'es' ? 'var(--teal)' : '#9db3ab';
+  document.documentElement.lang = l;
+}
+</script>
 """
 
 SUCCESS_HTML = STYLE + """
