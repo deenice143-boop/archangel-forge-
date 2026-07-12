@@ -83,6 +83,11 @@ Write ONLY the system prompt text itself, ready to be given to the voice agent.
 It should be thorough but concise, written in second person ("You are...").
 Include: the greeting to use, how to identify the caller's purpose, spam detection
 behavior, what information to collect from genuine callers, and how to close calls.
+
+CRITICAL LANGUAGE RULE: if the language above is not English (e.g. "es" = Spanish),
+write the ENTIRE system prompt in that language, and include an explicit instruction
+that the agent must speak ONLY that language on every call, including its greeting,
+questions, and how it dismisses spam callers.
 """
     resp = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -334,9 +339,12 @@ def create():
 
     try:
         system_prompt = generate_agent_prompt(fields)
-        first_message = fields["greeting"] or (
-            f"Hello, you've reached {fields['business_name']}. How can I help you today?"
-        )
+        if fields["greeting"]:
+            first_message = fields["greeting"]
+        elif fields["language"] == "es":
+            first_message = f"Hola, ha llamado a {fields['business_name']}. ¿En qué puedo ayudarle hoy?"
+        else:
+            first_message = f"Hello, you've reached {fields['business_name']}. How can I help you today?"
         agent_id = create_elevenlabs_agent(
             name=f"UD - {fields['business_name']}",
             system_prompt=system_prompt,
