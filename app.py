@@ -203,11 +203,13 @@ def create_elevenlabs_agent(name, system_prompt, first_message, language,
         "first_message": first_message,
         "language": "en" if language == "bi" else language,
     }
+    # ElevenLabs enforces the TTS model per language:
+    #   English-only agents  -> flash/turbo v2
+    #   Spanish or bilingual -> flash/turbo v2.5 (multilingual)
+    tts_model = "eleven_flash_v2" if language == "en" else "eleven_flash_v2_5"
     conversation_config = {
         "agent": agent_cfg,
-        # flash v2.5 is multilingual — required for non-English agents,
-        # and fast + inexpensive for English ones too
-        "tts": {"model_id": "eleven_flash_v2_5"},
+        "tts": {"model_id": tts_model},
     }
 
     if language == "bi":
