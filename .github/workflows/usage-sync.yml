@@ -1,0 +1,26 @@
+name: Forge usage sync
+# Pings the Forge's sync endpoint on a schedule. This is what makes the
+# tracking fully automatic: GitHub runs this even while Render sleeps,
+# and the ping both wakes the service and triggers the sync.
+#
+# SETUP (one time):
+#   Repo -> Settings -> Secrets and variables -> Actions -> New repository secret
+#   Name:  FORGE_SYNC_URL
+#   Value: https://YOUR-FORGE.onrender.com/tasks/sync?key=YOUR_ADMIN_PASSWORD
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # every 30 minutes
+  workflow_dispatch:          # also lets you trigger it manually from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the Forge sync endpoint
+        run: |
+          # --max-time 120 gives Render's free tier time to wake from sleep
+          curl --silent --show-error --max-time 120 "${{ secrets.FORGE_SYNC_URL }}" || true
+          sleep 20
+          # second attempt in case the first only woke the service
+          curl --silent --show-error --max-time 120 "${{ secrets.FORGE_SYNC_URL }}"
