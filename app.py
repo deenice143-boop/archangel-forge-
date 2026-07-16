@@ -514,6 +514,12 @@ T = {
         "spam_ph": "Politely end the call and block",
         "agent_lang": "Agent language", "lang_en": "English", "lang_es": "Spanish",
         "lang_bi": "Bilingual — auto-detects English or Spanish",
+        "wa_display": "WhatsApp display name",
+        "wa_display_small": "(the business name callers will see on WhatsApp)",
+        "wa_number": "WhatsApp number to connect",
+        "wa_number_small": "(the number the agent will answer — leave blank if we're providing one)",
+        "wa_existing": "Does that number already have WhatsApp installed?",
+        "wa_no": "No — clean number", "wa_personal": "Yes — regular WhatsApp app", "wa_business": "Yes — WhatsApp Business app",
         "voice": "Voice ID",
         "voice_small": "(optional — paste an ElevenLabs voice ID; blank = your default voice)",
         "plan": "Plan",
@@ -546,6 +552,12 @@ T = {
         "spam_ph": "Terminar la llamada cortésmente y bloquear",
         "agent_lang": "Idioma del agente", "lang_en": "Inglés", "lang_es": "Español",
         "lang_bi": "Bilingüe — detecta inglés o español automáticamente",
+        "wa_display": "Nombre visible en WhatsApp",
+        "wa_display_small": "(el nombre del negocio que verán quienes llamen)",
+        "wa_number": "Número de WhatsApp a conectar",
+        "wa_number_small": "(el número que el agente contestará — déjelo en blanco si nosotros lo proveemos)",
+        "wa_existing": "¿Ese número ya tiene WhatsApp instalado?",
+        "wa_no": "No — número limpio", "wa_personal": "Sí — app de WhatsApp normal", "wa_business": "Sí — app de WhatsApp Business",
         "voice": "ID de voz",
         "voice_small": "(opcional — pegue un ID de voz de ElevenLabs; en blanco = su voz predeterminada)",
         "plan": "Plan",
@@ -649,6 +661,16 @@ FORM_HTML = STYLE + LANGBAR + """
     <label>{{ t.plan }}</label>
     <select name="plan_id">
       {% for p in plans %}<option value="{{ p.id }}" {{ 'selected' if p.id=='trial' else '' }}>{{ p.name }} — ${{ p.monthly_base }}/mo, {{ p.included_minutes|int }} min</option>{% endfor %}
+    </select>
+    <label>{{ t.wa_display }} <small>{{ t.wa_display_small }}</small></label>
+    <input name="wa_display_name" placeholder="Keller Plumbing">
+    <label>{{ t.wa_number }} <small>{{ t.wa_number_small }}</small></label>
+    <input name="wa_number" placeholder="+1 555 123 4567">
+    <label>{{ t.wa_existing }}</label>
+    <select name="wa_existing">
+      <option value="no">{{ t.wa_no }}</option>
+      <option value="personal">{{ t.wa_personal }}</option>
+      <option value="business">{{ t.wa_business }}</option>
     </select>
     <label>{{ t.voice }} <small>{{ t.voice_small }}</small></label>
     <input name="voice_id" placeholder="JBFqnCBsd6RMkjVDRZzb">
@@ -792,7 +814,8 @@ def create():
 
     fields = {k: request.form.get(k, "").strip() for k in
               ("business_name", "description", "hours", "forward_name", "greeting",
-               "questions", "never_say", "spam_policy", "ref_code", "voice_id")}
+               "questions", "never_say", "spam_policy", "ref_code", "voice_id",
+               "wa_display_name", "wa_number", "wa_existing")}
     fields["language"] = pick_agent_lang(request.form.get("language", "en"))
     plan_id = request.form.get("plan_id", "trial")
     if plan_id not in [p["id"] for p in plans]:
